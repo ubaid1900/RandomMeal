@@ -1,0 +1,17 @@
+{
+  "name": "Random Meal Picker",
+  "short_name": "Meal Picker",
+  "description": "Pick a meal from your personal list of favourites.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#198754",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
