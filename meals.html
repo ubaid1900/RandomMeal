@@ -37,6 +37,58 @@
           <section class="card shadow-sm" aria-labelledby="meals-heading">
             <div class="card-body p-4">
               <h2 id="meals-heading" class="h4 mb-3">Your meals</h2>
+              <details class="border rounded p-3 mb-3">
+                <summary class="fw-semibold">Import with AI</summary>
+                <div class="mt-3">
+                  <h3 class="h6">Step 1: Ask any AI assistant</h3>
+                  <p class="small text-body-secondary">
+                    Copy this prompt, customize the request, and ask an AI assistant to create your meal list.
+                  </p>
+                  <label class="visually-hidden" for="ai-prompt">AI meal import prompt</label>
+                  <textarea id="ai-prompt" class="form-control font-monospace small mb-2" rows="12" readonly>Generate a regional or personalized meal list for this request: [describe a region, cuisine, dietary preference, ingredients, or other needs].
+
+Return only valid JSON with breakfast, lunch, and dinner arrays. Each array item must be an object with:
+- "name": a meal name (string)
+- "prepTime": preparation time in minutes (number)
+- "tags": descriptive tags (array of strings)
+- "quickNote": a short helpful cooking note (string)
+- "keyIngredients": main ingredients (array of strings)
+
+Use an empty array when there are no meals for a category. Do not include markdown or text outside the JSON. Example:
+{
+  "breakfast": [{"name": "Vegetable poha", "prepTime": 20, "tags": ["Indian", "Vegetarian"], "quickNote": "Rinse the flattened rice briefly.", "keyIngredients": ["flattened rice", "peas", "peanuts"]}],
+  "lunch": [],
+  "dinner": []
+}</textarea>
+                  <button id="copy-prompt" class="btn btn-outline-secondary btn-sm" type="button">Copy Prompt</button>
+
+                  <hr>
+                  <h3 class="h6">Step 2: Paste and import</h3>
+                  <label class="form-label small" for="ai-meals-json">AI response (JSON)</label>
+                  <textarea
+                    id="ai-meals-json"
+                    class="form-control font-monospace small mb-2"
+                    rows="8"
+                    placeholder='Paste JSON with "breakfast", "lunch", and/or "dinner" arrays'
+                  ></textarea>
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button id="paste-ai-response" class="btn btn-outline-secondary btn-sm" type="button">Paste from Clipboard</button>
+                    <span id="ai-import-message" class="small align-self-center" role="status" aria-live="polite"></span>
+                  </div>
+                  <fieldset class="mb-3">
+                    <legend class="form-label small mb-2">How should these meals be added?</legend>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="ai-import-mode" id="ai-import-merge" value="merge" checked>
+                      <label class="form-check-label" for="ai-import-merge">Merge with existing meals</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="ai-import-mode" id="ai-import-replace" value="replace">
+                      <label class="form-check-label" for="ai-import-replace">Replace existing meals</label>
+                    </div>
+                  </fieldset>
+                  <button id="import-ai-meals" class="btn btn-success" type="button">Import Meals</button>
+                </div>
+              </details>
               <form id="add-meal-form" class="row g-2 mb-3">
                 <div class="col-12 col-sm-6">
                   <label class="visually-hidden" for="new-meal">New meal</label>
