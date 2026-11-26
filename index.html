@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#198754">
-    <meta name="description" content="Pick a meal from your personal list of favourites.">
+    <meta name="description" content="Choose a meal from your personal list, discover cooking ideas, and plan an easy meal rotation.">
     <title>Random Meal Picker</title>
     <script src="theme.js?v=__BUILD_VERSION__"></script>
     <link rel="manifest" href="manifest.webmanifest">
@@ -22,7 +22,7 @@
         <div class="col-12 col-md-9 col-lg-7">
           <header class="text-center mb-4">
             <h1 class="display-5 fw-bold">Random Meal Picker</h1>
-            <p class="text-body-secondary mb-0">Let your saved meals decide what's for dinner.</p>
+            <p class="text-body-secondary mb-0">Let your saved meals help decide what to eat.</p>
             <div class="d-flex justify-content-center align-items-center gap-2 mt-3">
               <a class="btn btn-outline-success" href="meals.html">Manage meals</a>
               <label class="visually-hidden" for="theme-selector">Color theme</label>
@@ -37,9 +37,18 @@
           <section class="card shadow-sm mb-4" aria-labelledby="picker-heading">
             <div class="card-body p-4 text-center">
               <h2 id="picker-heading" class="h5">What should I eat?</h2>
-              <p id="meal-result" class="fs-3 fw-semibold my-4" aria-live="polite">
-                Choose breakfast, lunch, or dinner.
-              </p>
+              <div class="my-4" aria-live="polite" aria-atomic="true">
+                <h3 id="meal-result" class="fs-3 fw-semibold mb-3">Choosing a meal...</h3>
+                <div id="meal-details" class="d-flex flex-wrap justify-content-center gap-2"></div>
+              </div>
+              <a
+                id="youtube-search"
+                class="btn btn-outline-danger mb-4"
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                hidden
+              >Search recipe on YouTube</a>
               <div id="category-pickers" class="d-grid gap-2 d-sm-flex" role="group" aria-label="Pick a meal by category">
                 <button class="btn btn-success btn-lg flex-fill" type="button" data-category="breakfast">Breakfast</button>
                 <button class="btn btn-success btn-lg flex-fill" type="button" data-category="lunch">Lunch</button>
@@ -49,6 +58,65 @@
           </section>
 
           <p id="storage-message" class="small text-body-secondary text-center mt-3 mb-0"></p>
+        </div>
+      </div>
+
+      <div class="row justify-content-center mt-5">
+        <div class="col-12 col-lg-10">
+          <section class="card shadow-sm mb-4" aria-labelledby="rotation-tips-heading">
+            <div class="card-body p-4 p-md-5">
+              <h2 id="rotation-tips-heading" class="h3">Practical meal-rotation and cooking tips</h2>
+              <p class="text-body-secondary">
+                A simple rotation makes everyday cooking easier without locking you into a rigid schedule.
+                Keep a mix of quick meals, comforting favorites, and dishes that make useful leftovers.
+              </p>
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <h3 class="h5">Build a flexible rotation</h3>
+                  <ul class="mb-0">
+                    <li>Choose a few meals for the week and spread them across different categories.</li>
+                    <li>Repeat reliable favorites, then add one new idea when you feel like experimenting.</li>
+                    <li>Use shared ingredients across meals to simplify shopping and reduce food waste.</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <h3 class="h5">Make cooking more manageable</h3>
+                  <ul class="mb-0">
+                    <li>Prep versatile ingredients ahead, such as washed vegetables, cooked grains, or sauces.</li>
+                    <li>Keep a quick meal on your list for busy days and save leftovers for an easy lunch.</li>
+                    <li>Adjust recipes to the ingredients, time, and equipment you have available.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card shadow-sm mb-4" aria-labelledby="about-heading">
+            <div class="card-body p-4 p-md-5">
+              <h2 id="about-heading" class="h3">About Random Meal Picker</h2>
+              <p class="mb-0">
+                Random Meal Picker helps you decide what to eat by choosing from meals assigned to
+                breakfast, lunch, or dinner. Add your own meal names, adjust their categories, and
+                use the YouTube search link to look for recipe ideas. Meal suggestions are for
+                inspiration only; always check recipe ingredients and labels for your dietary needs
+                and allergies.
+              </p>
+            </div>
+          </section>
+
+          <section class="card shadow-sm" aria-labelledby="privacy-heading">
+            <div class="card-body p-4 p-md-5">
+              <h2 id="privacy-heading" class="h3">Privacy Policy</h2>
+              <p class="mb-0">
+                Your custom meal list and theme preference are stored locally in your browser using
+                localStorage; they are not sent to a meal-picker account or server. Clearing browser
+                data may remove them. If Google AdSense ads are shown, Google may use cookies or
+                similar technologies to serve ads and measure their performance, subject to Google's
+                privacy and advertising policies. The YouTube search link opens YouTube in a new tab,
+                where its own privacy policies apply.
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </main>
