@@ -16,8 +16,39 @@ const aiImportMessage = document.querySelector("#ai-import-message");
 
 let meals = MealStore.readMeals(storageMessage);
 
+function normalizeMealName(name) {
+  return name.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeMealText(value) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function mergeUniqueStrings(existingValues, importedValues) {
+  const mergedValues = [];
+  const seenValues = new Set();
+  [...(Array.isArray(existingValues) ? existingValues : []),
+    ...(Array.isArray(importedValues) ? importedValues : [])].forEach((value) => {
+    if (typeof value !== "string") {
+      return;
+    }
+
+    const normalizedValue = normalizeMealText(value);
+    const key = normalizedValue.toLowerCase();
+    if (normalizedValue && !seenValues.has(key)) {
+      seenValues.add(key);
+      mergedValues.push(normalizedValue);
+    }
+  });
+  return mergedValues;
+}
+
 function parseImportedMeals(response) {
   const trimmedResponse = response.trim();
+  if (!trimmedResponse) {
+    throw new Error("No valid meals found to import.");
+  }
+
   const fencedResponse = trimmedResponse.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
   const parsed = JSON.parse(fencedResponse ? fencedResponse[1] : trimmedResponse);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -37,8 +68,8 @@ function parseImportedMeals(response) {
         return;
       }
 
-      const name = item.name.trim();
-      const key = name.toLocaleLowerCase();
+      const name = normalizeMealText(item.name);
+      const key = normalizeMealName(name);
       const importedMeal = mealByName.get(key) || { name, categories: [] };
       if (!importedMeal.categories.includes(category)) {
         importedMeal.categories.push(category);
@@ -47,21 +78,13 @@ function parseImportedMeals(response) {
         importedMeal.prepTime = item.prepTime;
       }
       if (Array.isArray(item.tags)) {
-        importedMeal.tags = [...new Set([
-          ...(importedMeal.tags || []),
-          ...item.tags.filter((tag) => typeof tag === "string" && tag.trim()).map((tag) => tag.trim()),
-        ])];
+        importedMeal.tags = mergeUniqueStrings(importedMeal.tags, item.tags);
       }
       if (typeof item.quickNote === "string" && item.quickNote.trim()) {
         importedMeal.quickNote = item.quickNote.trim();
       }
       if (Array.isArray(item.keyIngredients)) {
-        importedMeal.keyIngredients = [...new Set([
-          ...(importedMeal.keyIngredients || []),
-          ...item.keyIngredients
-            .filter((ingredient) => typeof ingredient === "string" && ingredient.trim())
-            .map((ingredient) => ingredient.trim()),
-        ])];
+        importedMeal.keyIngredients = mergeUniqueStrings(importedMeal.keyIngredients, item.keyIngredients);
       }
       mealByName.set(key, importedMeal);
     });
@@ -69,40 +92,116 @@ function parseImportedMeals(response) {
 
   const importedMeals = [...mealByName.values()];
   if (importedMeals.length === 0) {
-    throw new Error("No valid meals were found. Each meal needs a non-empty name.");
+    throw new Error("No valid meals found to import.");
   }
   return importedMeals;
+}
+
+function mergeMealData(existingMeal, importedMeal) {
+  let changed = false;
+  ["categories", "tags", "keyIngredients"].forEach((property) => {
+    const existingValues = existingMeal[property];
+    const importedValues = importedMeal[property];
+    if (!Array.isArray(existingValues) && !Array.isArray(importedValues)) {
+      return;
+    }
+
+    const mergedValues = mergeUniqueStrings(existingValues, importedValues);
+    if (!Array.isArray(existingValues) && mergedValues.length === 0) {
+      return;
+    }
+    if (!Array.isArray(existingValues) ||
+      existingValues.length !== mergedValues.length ||
+      existingValues.some((value, index) => value !== mergedValues[index])) {
+      changed = true;
+    }
+    existingMeal[property] = mergedValues;
+  });
+  ["prepTime", "quickNote"].forEach((property) => {
+    if (existingMeal[property] === undefined && importedMeal[property] !== undefined) {
+      existingMeal[property] = importedMeal[property];
+      changed = true;
+    }
+  });
+  return changed;
 }
 
 function mergeMeals(existingMeals, importedMeals) {
   const mergedMeals = [];
   const mealByName = new Map();
-  [...existingMeals, ...importedMeals].forEach((meal) => {
-    const key = meal.name.trim().toLocaleLowerCase();
+  const uniqueImportedMeals = new Map();
+  existingMeals.forEach((meal) => {
+    const key = normalizeMealName(meal.name);
     const existingMeal = mealByName.get(key);
-    if (!existingMeal) {
-      const copiedMeal = { ...meal, categories: [...meal.categories] };
-      mealByName.set(key, copiedMeal);
-      mergedMeals.push(copiedMeal);
+    if (existingMeal) {
+      mergeMealData(existingMeal, meal);
       return;
     }
 
-    existingMeal.categories = [...new Set([...existingMeal.categories, ...meal.categories])];
-    ["tags", "keyIngredients"].forEach((property) => {
-      if (Array.isArray(meal[property])) {
-        existingMeal[property] = [...new Set([
-          ...(Array.isArray(existingMeal[property]) ? existingMeal[property] : []),
-          ...meal[property],
-        ])];
-      }
-    });
-    ["prepTime", "quickNote"].forEach((property) => {
-      if (existingMeal[property] === undefined && meal[property] !== undefined) {
-        existingMeal[property] = meal[property];
-      }
+    const copiedMeal = { ...meal };
+    mealByName.set(key, copiedMeal);
+    mergedMeals.push(copiedMeal);
+  });
+
+  importedMeals.forEach((meal) => {
+    const normalizedName = normalizeMealText(meal.name);
+    const key = normalizeMealName(normalizedName);
+    const uniqueMeal = uniqueImportedMeals.get(key);
+    if (uniqueMeal) {
+      mergeMealData(uniqueMeal, meal);
+      return;
+    }
+
+    uniqueImportedMeals.set(key, {
+      ...meal,
+      name: normalizedName,
+      categories: mergeUniqueStrings([], meal.categories),
+      ...(Array.isArray(meal.tags) ? { tags: mergeUniqueStrings([], meal.tags) } : {}),
+      ...(Array.isArray(meal.keyIngredients)
+        ? { keyIngredients: mergeUniqueStrings([], meal.keyIngredients) }
+        : {}),
     });
   });
-  return mergedMeals;
+
+  const stats = { added: 0, updated: 0, duplicates: 0 };
+  uniqueImportedMeals.forEach((meal, key) => {
+    const existingMeal = mealByName.get(key);
+    if (!existingMeal) {
+      const copiedMeal = { ...meal };
+      mealByName.set(key, copiedMeal);
+      mergedMeals.push(copiedMeal);
+      stats.added += 1;
+    } else if (mergeMealData(existingMeal, meal)) {
+      stats.updated += 1;
+    } else {
+      stats.duplicates += 1;
+    }
+  });
+
+  return { meals: mergedMeals, stats };
+}
+
+function formatImportStatus({ added, updated, duplicates }) {
+  const mealCount = (count, singular) => `${count} ${count === 1 ? singular : `${singular}s`}`;
+  if (added === 0 && updated === 0) {
+    return duplicates > 0
+      ? `No new meals added — ${mealCount(duplicates, "duplicate")} already in your list.`
+      : "No valid meals found to import.";
+  }
+
+  let message;
+  if (added > 0 && updated > 0) {
+    message = `Imported ${mealCount(added, "new meal")} and updated ${mealCount(updated, "existing meal")}`;
+  } else if (added > 0) {
+    message = `Imported ${mealCount(added, "new meal")}`;
+  } else {
+    message = `Updated ${mealCount(updated, "existing meal")}`;
+  }
+
+  if (duplicates > 0) {
+    message += ` (${mealCount(duplicates, "duplicate")} skipped)`;
+  }
+  return `${message}.`;
 }
 
 function renderMeals() {
@@ -276,9 +375,16 @@ importAiMealsButton.addEventListener("click", () => {
   }
 
   const importMode = document.querySelector('input[name="ai-import-mode"]:checked').value;
-  const updatedMeals = importMode === "replace"
-    ? importedMeals
-    : mergeMeals(meals, importedMeals);
+  let updatedMeals;
+  let importStats;
+  if (importMode === "replace") {
+    updatedMeals = importedMeals;
+    importStats = { added: importedMeals.length, updated: 0, duplicates: 0 };
+  } else {
+    const mergeResult = mergeMeals(meals, importedMeals);
+    updatedMeals = mergeResult.meals;
+    importStats = mergeResult.stats;
+  }
   if (!MealStore.saveMeals(updatedMeals, storageMessage)) {
     aiImportMessage.textContent = "Meals could not be saved. Check your browser storage settings and try again.";
     return;
@@ -286,7 +392,7 @@ importAiMealsButton.addEventListener("click", () => {
 
   meals = updatedMeals;
   renderMeals();
-  aiImportMessage.textContent = `${importedMeals.length} ${importedMeals.length === 1 ? "meal" : "meals"} imported successfully.`;
+  aiImportMessage.textContent = formatImportStatus(importStats);
 });
 
 window.addEventListener("storage", (event) => {
